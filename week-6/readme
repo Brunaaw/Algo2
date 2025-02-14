@@ -1,0 +1,29 @@
+# Sistema de Recomendação com Fuzzy Matcher
+
+## Descrição
+Sistema de recomendação que sugere artigos a usuários com base na similaridade entre preferências utilizando **fuzzy-matcher**.
+
+## Como Executar
+```sh
+python fuzzy_recommendations.py
+```
+Selecione o usuário pelo número e visualize as recomendações.
+
+## Dependências
+```sh
+pip install fuzzy-match
+```
+
+## Testes
+Para rodar os testes:
+```sh
+python -m unittest fuzzy_recommendations.py
+```
+
+## Estrutura
+- **Preprocessamento** para limpeza de texto.
+- **Tokenização** personalizada.
+- **Cálculo de similaridade** entre usuários.
+
+
+

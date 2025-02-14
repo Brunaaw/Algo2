@@ -1,12 +1,11 @@
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from fuzzy_match import match
 import re
 import unittest
 
 usuarios = {
-    "user1": ["Machine Learning", "Data Science", "Python"],
-    "user2": ["Deep Learning", "Artificial Intelligence", "Python"],
-    "user3": ["Software Engineering", "Agile", "Project Management"]
+    "Alice": ["Machine Learning", "Data Science", "Python"],
+    "Bruno": ["Deep Learning", "Artificial Intelligence", "Python"],
+    "Carla": ["Software Engineering", "Agile", "Project Management"]
 }
 
 artigos = [
@@ -22,44 +21,47 @@ def preprocess_custom(text):
     words = text.lower().split()
     return " ".join([word for word in words if word not in stopwords])
 
-def tokenize_fuzzy(text):
-    return process.extract(text, artigos, limit=3)
-
 def tokenize_custom(text):
-    words = text.split()
-    return [" ".join(words[i:i+2]) for i in range(len(words)-1)]
+    return text.split()
+
+def calcular_similaridade_usuarios(usuario):
+    preferencias_usuario = set(usuarios.get(usuario, []))
+    similaridade = {}
+    for outro_usuario, prefs in usuarios.items():
+        if outro_usuario != usuario:
+            interseccao = len(preferencias_usuario.intersection(prefs))
+            similaridade[outro_usuario] = interseccao / len(preferencias_usuario.union(prefs))
+    return similaridade
 
 def recomendar_artigos(usuario):
-    preferencias = usuarios.get(usuario, [])
+    similaridade = calcular_similaridade_usuarios(usuario)
     recomendacoes = {}
-    
-    for artigo in artigos:
-        max_score = 0
-        for pref in preferencias:
-            score = fuzz.ratio(artigo, pref)
-            max_score = max(max_score, score)
-        recomendacoes[artigo] = max_score
-    
+    for outro_usuario, sim_score in similaridade.items():
+        for artigo in usuarios[outro_usuario]:
+            if artigo not in usuarios[usuario]:
+                recomendacoes[artigo] = recomendacoes.get(artigo, 0) + sim_score
     return sorted(recomendacoes, key=recomendacoes.get, reverse=True)
 
-def jaccard_similarity(str1, str2):
-    set1, set2 = set(str1.split()), set(str2.split())
-    return len(set1 & set2) / len(set1 | set2)
+if __name__ == "__main__":
+    usuario_input = input("Selecione um usuário digitando o número correspondente: 1 - Alice, 2 - Bruno, 3 - Carla: ")
+    usuarios_nomes = {"1": "Alice", "2": "Bruno", "3": "Carla"}
+    usuario_input = usuarios_nomes.get(usuario_input, None)
+    if usuario_input in usuarios:
+        recomendacoes = recomendar_artigos(usuario_input)
+        print("Recomendações para", usuario_input, ":", recomendacoes)
+    else:
+        print("Usuário não encontrado.")
 
 class TestSistemaRecomendacoes(unittest.TestCase):
     def test_preprocess_custom(self):
         self.assertEqual(preprocess_custom("Introduction to AI"), "introduction ai")
-    
+
     def test_tokenize_custom(self):
-        self.assertEqual(tokenize_custom("Machine Learning for AI"), ["Machine Learning", "Learning for", "for AI"])
-    
+        self.assertEqual(tokenize_custom("Machine Learning for AI"), ["Machine", "Learning", "for", "AI"])
+
     def test_recommendation(self):
-        recomendacoes = recomendar_artigos("user1")
-        self.assertIn("Machine Learning for Beginners", recomendacoes)
-    
-    def test_jaccard_similarity(self):
-        score = jaccard_similarity("Machine Learning", "Learning Machines")
-        self.assertGreater(score, 0)
-        
-if __name__ == "__main__":
+        recomendacoes = recomendar_artigos("Alice")
+        self.assertTrue(len(recomendacoes) > 0)
+
+if __name__ == "__test__":
     unittest.main()
